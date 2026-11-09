@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+title: "Dimensionality reduction and ensemble of LSTMs for antimicrobial resistance prediction"
+message: "If you use this software, please cite the accompanying paper."
+type: software
+license: MIT
+authors:
+  - family-names: Hernández-Carnerero
+    given-names: Àlvar
+    email: alvar.hernandez@upc.edu
+    affiliation: Universitat Politècnica de Catalunya
+  - family-names: Sànchez-Marrè
+    given-names: Miquel
+    affiliation: Universitat Politècnica de Catalunya
+  - family-names: Mora-Jiménez
+    given-names: Inmaculada
+    affiliation: Universidad Rey Juan Carlos
+  - family-names: Soguero-Ruiz
+    given-names: Cristina
+    affiliation: Universidad Rey Juan Carlos
+  - family-names: Martínez-Agüero
+    given-names: Sergio
+    affiliation: Universidad Rey Juan Carlos
+  - family-names: Álvarez-Rodríguez
+    given-names: Joaquín
+    affiliation: University Hospital of Fuenlabrada
+preferred-citation:
+  type: article
+  title: "Dimensionality reduction and ensemble of LSTMs for antimicrobial resistance prediction"
+  journal: "Artificial Intelligence in Medicine"
+  volume: 138
+  year: 2023
+  start: 102508
+  doi: 10.1016/j.artmed.2023.102508
+  authors:
+    - family-names: Hernández-Carnerero
+      given-names: Àlvar
+    - family-names: Sànchez-Marrè
+      given-names: Miquel
+    - family-names: Mora-Jiménez
+      given-names: Inmaculada
+    - family-names: Soguero-Ruiz
+      given-names: Cristina
+    - family-names: Martínez-Agüero
+      given-names: Sergio
+    - family-names: Álvarez-Rodríguez
+      given-names: Joaquín

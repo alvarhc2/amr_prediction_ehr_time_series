@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+outputs/
+*.h5
+*.npz
+_feature_names.txt
+src/amr_lstm/_features_body.txt
+.DS_Store

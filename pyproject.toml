@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amr-lstm"
+version = "1.0.0"
+description = "Dimensionality reduction and an ensemble of LSTMs for antimicrobial resistance prediction"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10,<3.14"
+authors = [
+    {name = "Àlvar Hernández-Carnerero", email = "alvar.hernandez@upc.edu"},
+]
+keywords = [
+    "antimicrobial-resistance",
+    "lstm",
+    "feature-selection",
+    "time-series",
+    "intensive-care",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scikit-learn>=1.3",
+    "tensorflow>=2.15",
+]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.7"]
+dev = ["matplotlib>=3.7", "pytest>=7.4"]
+
+[project.scripts]
+amr-demo = "amr_lstm.demo:main"
+
+[project.urls]
+Paper = "https://doi.org/10.1016/j.artmed.2023.102508"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
