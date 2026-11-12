@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="300" viewBox="0 0 360 300">
+  <rect width="360" height="300" rx="18" fill="#f4f8fb"/>
+  <rect x="1.25" y="1.25" width="357.5" height="297.5" rx="17" fill="none" stroke="#d5e2ee" stroke-width="1.5"/>
+  <text x="180" y="34" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" font-weight="700" fill="#16324f">Permutation</text>
+  <text x="180" y="54" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#5c7086">How much does the score drop?</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="11" fill="#5c7086" text-anchor="middle">
+    <text x="118" y="84">f1</text>
+    <text x="162" y="84">f2</text>
+    <text x="206" y="84">f3</text>
+    <text x="250" y="84">f4</text>
+  </g>
+  <g>
+    <rect x="100" y="94" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="144" y="94" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="188" y="94" width="36" height="28" rx="6" fill="#c2410c"/>
+    <rect x="232" y="94" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="100" y="128" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="144" y="128" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="188" y="128" width="36" height="28" rx="6" fill="#f4c7b0"/>
+    <rect x="232" y="128" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="100" y="162" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="144" y="162" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="188" y="162" width="36" height="28" rx="6" fill="#8f3a16"/>
+    <rect x="232" y="162" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="100" y="196" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="144" y="196" width="36" height="28" rx="6" fill="#e7eef6"/>
+    <rect x="188" y="196" width="36" height="28" rx="6" fill="#e88966"/>
+    <rect x="232" y="196" width="36" height="28" rx="6" fill="#e7eef6"/>
+  </g>
+  <path d="M292 118c18 16 18 78 0 96" fill="none" stroke="#c2410c" stroke-width="2"/>
+  <path d="M286 208 l6 10 8-7" fill="none" stroke="#c2410c" stroke-width="2" stroke-linejoin="round"/>
+  <text x="180" y="252" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#16324f">Shuffle one feature and leave the rest</text>
+  <text x="180" y="270" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#16324f">Importance is the drop in the score</text>
+</svg>
