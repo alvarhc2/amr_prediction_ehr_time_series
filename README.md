@@ -6,12 +6,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 Companion code for Hernández-Carnerero et al., *Artificial Intelligence in Medicine* **138** (2023) 102508.
-The study predicts whether *Pseudomonas aeruginosa* cultured in an intensive care unit will be **resistant or susceptible** to **six antibiotic families**, using the days of electronic health record data that precede the culture.
+The study predicts whether *Pseudomonas aeruginosa* cultured in an intensive care unit will be **resistant or susceptible** to **six antibiotic families**, using the days of Electronic Health Record (EHR) data that precede the culture.
 
-The antibiogram usually takes about **48 hours**. The model reads the **30 days** before the culture and returns an early estimate for each of those six families: **aminoglycosides (AMG)**, **carbapenems (CAR)**, **fourth-generation cephalosporins (CF4)**, **extended-spectrum penicillins (PAP)**, **polymyxins (POL)** and **quinolones (QUI)**.
+The result of an antibiogram, which determines resistance to antibiotics, requires **48 hours** to be ready. The proposed model in this study reads the **30 days** before the culture and returns an early estimate for each of those six families: **aminoglycosides (AMG)**, **carbapenems (CAR)**, **fourth-generation cephalosporins (CF4)**, **extended-spectrum penicillins (PAP)**, **polymyxins (POL)** and **quinolones (QUI)**.
 
 <p align="center">
-  <img src="docs/figures/multivariate_time_series.gif" alt="Three variables traced together across time" width="560">
+  <img src="docs/figures/multivariate_time_series.gif" alt="Three variables traced together across time" width="420">
 </p>
 
 <p align="center"><i>A <b>multivariate time series</b> is several variables observed on the same clock. In this study each line would be one clinical variable, and each step would be one day in the ICU.</i></p>
@@ -46,7 +46,7 @@ Features fall into nine sets published with the paper:
 | ICU resistance | Resistance observed in co-admitted patients | 7 |
 | ICU treatment | Antibiotics and ventilation among co-admitted patients | 61 |
 
-`date` and `year` are left out. They impose an order on the cultures and, in earlier work on this task, made prediction worse.
+`date` and `year` are left out. They impose an order on the cultures and, in earlier work on this task, biased the prediction.
 
 Cultures are sorted in time. **Training** uses 2004–2012. From 2013–2019, the earlier half is **validation** and the later half is **test**. A patient who appears in training is removed from both later sets, so the same stay cannot leak into the evaluation.
 
@@ -55,7 +55,7 @@ Cultures are sorted in time. **Training** uses 2004–2012. From 2013–2019, th
 Three wrapper importances are computed with the **LSTM** itself, so the score of a feature depends on the sequence model that will use it.
 
 <p align="center">
-  <img src="docs/figures/fi_gradient.svg" alt="Gradient feature importance: one feature column darkens with the size of the input gradient" width="280">
+  <img src="docs/figures/fi_gradient.svg" alt="Gradient feature importance: the culture goes through the LSTM, and the prediction is differentiated back to one feature" width="280">
   <img src="docs/figures/fi_random_subset.svg" alt="Random-subset feature importance: a subset of columns is outlined and scored together" width="280">
   <img src="docs/figures/fi_permutation.svg" alt="Permutation feature importance: one feature column is shuffled" width="280">
 </p>
@@ -76,12 +76,12 @@ A **recursive split** keeps the half of the range with the higher mean performan
   <img src="docs/figures/fs_figure.jpg" alt="Performance against the number of features, with the recursive splits marked" width="680">
 </p>
 
-High dimensionality is only half of the difficulty: each family has a few hundred training cultures, and a single initialization moves the metrics. The **horizontal voting ensemble** stores the network after every epoch from 11 to 30 (20 checkpoints) and averages their probabilities. The single-network baseline is the checkpoint at epoch 20. Because the ensemble reuses one training run, it does not multiply the cost of fitting the LSTM from scratch.
-
 Two published feature selectors are included for comparison.
 
 - **Bootstrap voting** tests, on each day, whether the mean of a feature differs between resistant and susceptible cultures. Padding and don't-care days are left out of the vote. A feature is kept when it wins a majority of the days that can be tested. Each test uses the budget stated in the paper: 2,000 bootstrap draws of 70% of each class, at 95% confidence.
-- **Group lasso** fits a logistic model in which the 30 time steps of a feature are one group and are shrunk together. The penalty is chosen on the validation **evaluation metric**.
+- **Group lasso** fits a logistic model in which the 30 time steps of a feature are one group and are shrunk together. The penalty is chosen on the validation evaluation metric.
+
+High dimensionality is only half of the difficulty: each family has a few hundred training cultures, and a single initialization moves the metrics. The **horizontal voting ensemble** stores the network after every epoch from 11 to 30 (20 checkpoints) and averages their predicted probabilities. The single-network baseline is the checkpoint at epoch 20. Because the ensemble reuses one training run, it does not multiply the cost of fitting the LSTM from scratch.
 
 ## What the study found
 
@@ -160,7 +160,7 @@ A paired bootstrap test (2,000 resamples, 70% of the 50 runs, α = 0.05) finds a
   <img src="docs/figures/epochs_amg.jpeg" alt="Training and validation loss across epochs for the AMG family" width="520">
 </p>
 
-The predictions estimate the laboratory antibiogram. They are not a substitute for it, and they are not a device for choosing a drug at the bedside. A clinician can use them as one more piece of information while the culture is still in the laboratory.
+The predictions estimate the laboratory antibiogram. They are one more piece of information a clinician can use while the culture is still in the laboratory, not a substitute for the antibiogram and not a device for choosing a drug at the bedside. Slightly more accurate results are achieved in the [previous study](https://github.com/alvarhc2/amr_prediction_ehr_tabular) by keeping the training window closer in time to the test window.
 
 ## Run the code
 
@@ -210,7 +210,8 @@ src/amr_lstm/
 
 ## Data
 
-The cultures behind the paper come from the ICU of the University Hospital of Fuenlabrada, July 2004 to May 2019: 764 *P. aeruginosa* cultures from 277 patients. The hospital's ethics committee treats these records as confidential, including derived matrices, and this repository does not contain them.
+The cultures behind the paper come from the ICU of the University Hospital of Fuenlabrada, July 2004 to May 2019: 764 *P. 
+aeruginosa* cultures from 277 patients. The hospital extract is not part of this repository. Due to confidentiality, it cannot be uploaded.
 
 `generate_cohort` builds a synthetic cohort with the same tensor shape, the same don't-care code, the same six targets and a resistance mechanism planted on prior resistance, a few administered antibiotics, sex, respiratory admission and mechanical ventilation, with resistance becoming more common in later years. It is a way to execute the code. It is not a statistical stand-in for the hospital, and a model trained on it says nothing about a real ICU.
 
