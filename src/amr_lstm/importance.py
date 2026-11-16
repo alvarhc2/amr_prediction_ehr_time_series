@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 
 from amr_lstm.metrics import classification_metrics, figure_of_merit
@@ -39,6 +41,7 @@ def gradient_feature_importance(
     learning_rate: float = 1e-4,
     decay: float = 1e-5,
     batch_size: int = 32,
+    progress: Callable[[int, int], None] | None = None,
 ) -> list[tuple[str, float]]:
     """Sensitivity analysis averaged over validation cultures and repetitions.
 
@@ -53,6 +56,7 @@ def gradient_feature_importance(
     names = list(feature_names)
     accumulated = np.zeros((repetitions, len(names)), dtype=float)
     weights = np.zeros(repetitions, dtype=float)
+    _report(progress, 0, repetitions)
     for repetition in range(repetitions):
         model = _train(
             x_train,
@@ -70,6 +74,7 @@ def gradient_feature_importance(
         sensitivities = np.mean([gradient_sensitivity(model, sequence) for sequence in x_val], axis=0)
         accumulated[repetition] = sensitivities
         weights[repetition] = figure_of_merit(evaluate_model(model, x_val, y_val))
+        _report(progress, repetition + 1, repetitions)
     weights = np.nan_to_num(weights, nan=0.0)
     if float(weights.sum()) <= 0.0:
         weights[:] = 1.0
@@ -96,6 +101,7 @@ def random_subset_feature_importance(
     learning_rate: float = 1e-4,
     decay: float = 1e-5,
     batch_size: int = 32,
+    progress: Callable[[int, int], None] | None = None,
 ) -> list[tuple[str, float]]:
     """Mean validation merit of the random subsets that contain each feature.
 
@@ -112,7 +118,8 @@ def random_subset_feature_importance(
     rng = np.random.default_rng(seed)
     totals = np.zeros(n_features, dtype=float)
     counts = np.zeros(n_features, dtype=float)
-    for _ in range(n_subsets):
+    _report(progress, 0, n_subsets)
+    for subset in range(n_subsets):
         chosen = rng.choice(n_features, size=subset_size, replace=False)
         model = _train(
             x_train[:, :, chosen],
@@ -128,10 +135,10 @@ def random_subset_feature_importance(
             batch_size=batch_size,
         )
         merit = figure_of_merit(evaluate_model(model, x_val[:, :, chosen], y_val))
-        if np.isnan(merit):
-            continue
-        totals[chosen] += merit
-        counts[chosen] += 1.0
+        if not np.isnan(merit):
+            totals[chosen] += merit
+            counts[chosen] += 1.0
+        _report(progress, subset + 1, n_subsets)
     if np.any(counts == 0):
         floor = float(np.min(totals[counts > 0])) if np.any(counts > 0) else 0.0
         totals[counts == 0] = floor
@@ -157,6 +164,7 @@ def permutation_feature_importance(
     learning_rate: float = 1e-4,
     decay: float = 1e-5,
     batch_size: int = 32,
+    progress: Callable[[int, int], None] | None = None,
 ) -> list[tuple[str, float]]:
     """Drop in validation merit after the entries of one feature are shuffled.
 
@@ -167,6 +175,7 @@ def permutation_feature_importance(
     names = list(feature_names)
     rng = np.random.default_rng(seed)
     accumulated = np.zeros((repetitions, len(names)), dtype=float)
+    _report(progress, 0, repetitions)
     for repetition in range(repetitions):
         model = _train(
             x_train,
@@ -189,10 +198,16 @@ def permutation_feature_importance(
             shuffled[:, :, feature] = column.reshape(shuffled.shape[0], shuffled.shape[1])
             permuted = figure_of_merit(classification_metrics(y_val, predict_proba(model, shuffled)))
             accumulated[repetition, feature] = baseline - permuted
+        _report(progress, repetition + 1, repetitions)
     scores = np.nanmean(accumulated, axis=0)
     ranking = list(zip(names, scores.tolist()))
     ranking.sort(key=lambda item: item[1], reverse=True)
     return ranking
+
+
+def _report(progress: Callable[[int, int], None] | None, done: int, total: int) -> None:
+    if progress is not None:
+        progress(done, total)
 
 
 def _minmax(ranking: list[tuple[str, float]]) -> dict[str, float]:

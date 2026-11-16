@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from amr_lstm.baselines import bootstrap_voting_select, group_lasso_select
@@ -44,8 +45,13 @@ def select_features(
     config: StudyConfig,
     *,
     seed: int = 0,
+    progress: Callable[[str, int, int], None] | None = None,
 ) -> FamilyResult:
-    """Run the three importance methods, the recursive cutoff, and both baselines."""
+    """Run the three importance methods, the recursive cutoff, and both baselines.
+
+    ``progress``, when given, is called as ``progress(stage, done, total)``
+    before a stage starts and after each unit of work in that stage.
+    """
 
     shared = dict(
         units=config.units_full,
@@ -63,6 +69,7 @@ def select_features(
         split.y_val,
         repetitions=config.gradient_repetitions,
         seed=seed,
+        progress=_stage(progress, "Gradient feature importance"),
         **shared,
     )
     random_subset = random_subset_feature_importance(
@@ -74,6 +81,7 @@ def select_features(
         n_subsets=config.random_subsets,
         subset_size=config.random_subset_size,
         seed=seed + 1,
+        progress=_stage(progress, "Random-subset feature importance"),
         **shared,
     )
     permutation = permutation_feature_importance(
@@ -84,6 +92,7 @@ def select_features(
         split.y_val,
         repetitions=config.permutation_repetitions,
         seed=seed + 2,
+        progress=_stage(progress, "Permutation feature importance"),
         **shared,
     )
     ranked = average_importance(gradient, random_subset, permutation)
@@ -102,6 +111,7 @@ def select_features(
         learning_rate=config.learning_rate,
         decay=config.learning_rate_decay,
         batch_size=config.batch_size,
+        progress=_stage(progress, "Selection curve"),
     )
     n_features = recursive_feature_count(
         curve.accuracy,
@@ -118,6 +128,7 @@ def select_features(
         alpha=config.bootstrap_alpha,
         vote_fraction=config.vote_fraction,
         seed=seed + 4,
+        progress=_stage(progress, "Bootstrap voting"),
     )
     lasso_idx = group_lasso_select(
         split.x_train,
@@ -127,6 +138,7 @@ def select_features(
         lambdas=config.group_lasso_lambdas,
         n_iter=config.group_lasso_iterations,
         seed=seed + 5,
+        progress=_stage(progress, "Group lasso"),
     )
     return FamilyResult(
         family=split.family,
@@ -140,6 +152,19 @@ def select_features(
         random_subset=random_subset,
         permutation=permutation,
     )
+
+
+def _stage(
+    progress: Callable[[str, int, int], None] | None,
+    label: str,
+) -> Callable[[int, int], None] | None:
+    if progress is None:
+        return None
+
+    def report(done: int, total: int) -> None:
+        progress(label, done, total)
+
+    return report
 
 
 def _selection(method: str, names: list[str], feature_names: tuple[str, ...]) -> MethodSelection:

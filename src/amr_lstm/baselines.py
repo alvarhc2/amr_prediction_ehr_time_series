@@ -17,6 +17,7 @@ penalty weight is chosen on the validation figure of merit.
 from __future__ import annotations
 
 import warnings
+from collections.abc import Callable
 
 import numpy as np
 
@@ -32,6 +33,7 @@ def bootstrap_voting_select(
     alpha: float = 0.05,
     vote_fraction: float = 0.5,
     seed: int = 0,
+    progress: Callable[[int, int], None] | None = None,
 ) -> np.ndarray:
     """Return indices of features kept by the temporal bootstrap vote."""
 
@@ -42,6 +44,8 @@ def bootstrap_voting_select(
     _, timesteps, n_features = x.shape
     rng = np.random.default_rng(seed)
     selected: list[int] = []
+    if progress is not None:
+        progress(0, n_features)
     for feature in range(n_features):
         votes = 0
         eligible = 0
@@ -57,6 +61,8 @@ def bootstrap_voting_select(
                 votes += 1
         if eligible and votes > vote_fraction * eligible:
             selected.append(feature)
+        if progress is not None:
+            progress(feature + 1, n_features)
     return np.asarray(selected, dtype=int)
 
 
@@ -89,6 +95,7 @@ def group_lasso_select(
     n_iter: int = 400,
     learning_rate: float = 0.2,
     seed: int = 0,
+    progress: Callable[[int, int], None] | None = None,
 ) -> np.ndarray:
     """Return feature indices whose time-step group survives the chosen penalty."""
 
@@ -97,7 +104,9 @@ def group_lasso_select(
     best_indices: np.ndarray | None = None
     best_merit = -np.inf
     best_size = 10**9
-    for lam in lambdas:
+    if progress is not None:
+        progress(0, len(lambdas))
+    for step, lam in enumerate(lambdas):
         weights, mean, std = _fit_group_lasso(
             x_train, y_train, lam=lam, n_iter=n_iter, learning_rate=learning_rate, seed=seed
         )
@@ -109,6 +118,8 @@ def group_lasso_select(
             best_merit = merit
             best_size = size
             best_indices = indices
+        if progress is not None:
+            progress(step + 1, len(lambdas))
     return np.asarray([] if best_indices is None else best_indices, dtype=int)
 
 

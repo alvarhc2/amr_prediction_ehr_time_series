@@ -16,7 +16,7 @@ from amr_lstm.config import StudyConfig
 from amr_lstm.data import temporal_split
 from amr_lstm.metrics import classification_metrics
 from amr_lstm.model import evaluate_model
-from amr_lstm.pipeline import select_features, subset_split
+from amr_lstm.pipeline import FamilyResult, select_features, subset_split
 from amr_lstm.plots import plot_selection_curve
 from amr_lstm.schema import clinical_name
 from amr_lstm.synthetic import demo_feature_names, generate_cohort
@@ -47,14 +47,20 @@ def main() -> None:
         f"Split ({args.family}): train {len(split.y_train)}, "
         f"validation {len(split.y_val)}, test {len(split.y_test)}"
     )
-    result = select_features(split, cohort.feature_names, config, seed=args.seed)
+    status = _Status()
+    result = select_features(split, cohort.feature_names, config, seed=args.seed, progress=status)
+    status.close()
     print(f"Recursive selector keeps {result.n_features} features: " + _format(result.proposed.feature_names))
     print(f"Bootstrap voting keeps {len(result.bootstrap_voting.feature_names)} features")
     print(f"Group lasso keeps {len(result.group_lasso.feature_names)} features")
     plot_selection_curve(result.curve, result.n_features, args.output)
+    ranking_path = args.output.parent / "demo_ranking.txt"
+    _write_ranking(ranking_path, result)
     print(f"Wrote {args.output}")
+    print(f"Wrote {ranking_path}")
 
     reduced = subset_split(split, result.proposed.indices)
+    status = _Status()
     members, reference = fit_horizontal_ensemble(
         reduced.x_train,
         reduced.y_train,
@@ -69,7 +75,9 @@ def main() -> None:
         learning_rate=config.learning_rate,
         decay=config.learning_rate_decay,
         batch_size=config.batch_size,
+        progress=lambda done, total: status("Training horizontal ensemble", done, total),
     )
+    status.close()
     single = evaluate_model(reference, reduced.x_test, reduced.y_test)
     voted = classification_metrics(reduced.y_test, ensemble_proba(members, reduced.x_test))
     print(
@@ -78,6 +86,45 @@ def main() -> None:
         f"ensemble of {len(members)} checkpoints AUC {voted['auc']:.3f}. "
         "These are not the hospital results."
     )
+
+
+class _Status:
+    """One updating line per stage. A new stage keeps the finished line."""
+
+    def __init__(self) -> None:
+        self._label: str | None = None
+        self._width = 0
+
+    def __call__(self, label: str, done: int, total: int) -> None:
+        if label != self._label:
+            self.close()
+            self._label = label
+        filled = 0 if total <= 0 else int(20 * done / total)
+        bar = "#" * filled + "-" * (20 - filled)
+        text = f"{label} [{bar}] {done}/{total}"
+        padding = " " * max(0, self._width - len(text))
+        print("\r" + text + padding, end="", flush=True)
+        self._width = len(text)
+
+    def close(self) -> None:
+        if self._label is not None:
+            print()
+            self._label = None
+            self._width = 0
+
+
+def _write_ranking(path: Path, result: FamilyResult) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    gradient = dict(result.gradient)
+    random_subset = dict(result.random_subset)
+    permutation = dict(result.permutation)
+    lines = ["rank\tfeature\taverage\tgradient\trandom_subset\tpermutation"]
+    for rank, (name, average) in enumerate(result.ranked, start=1):
+        lines.append(
+            f"{rank}\t{clinical_name(name)}\t{average:.6f}\t"
+            f"{gradient[name]:.6f}\t{random_subset[name]:.6f}\t{permutation[name]:.6f}"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _format(names: list[str]) -> str:

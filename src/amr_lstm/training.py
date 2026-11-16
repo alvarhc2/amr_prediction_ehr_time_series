@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import numpy as np
@@ -38,6 +39,7 @@ def selection_curve(
     learning_rate: float = 1e-4,
     decay: float = 1e-5,
     batch_size: int = 32,
+    progress: Callable[[int, int], None] | None = None,
 ) -> PerformanceCurve:
     """Train on the top-1, top-2, ... features and record validation rates.
 
@@ -53,6 +55,8 @@ def selection_curve(
     specificity = np.zeros(limit, dtype=float)
     kept_names: list[str] = []
     rng = np.random.default_rng(seed)
+    if progress is not None:
+        progress(0, limit)
     for step in range(limit):
         name = ranked_features[step]
         chosen.append(lookup[name])
@@ -74,6 +78,8 @@ def selection_curve(
         accuracy[step] = metrics["accuracy"]
         sensitivity[step] = metrics["sensitivity"]
         specificity[step] = metrics["specificity"]
+        if progress is not None:
+            progress(step + 1, limit)
     return PerformanceCurve(accuracy, sensitivity, specificity, tuple(kept_names))
 
 
@@ -92,6 +98,7 @@ def fit_horizontal_ensemble(
     learning_rate: float = 1e-4,
     decay: float = 1e-5,
     batch_size: int = 32,
+    progress: Callable[[int, int], None] | None = None,
 ) -> tuple[list[tf.keras.Model], tf.keras.Model]:
     """Keep a checkpoint at the end of each epoch in ``[first_epoch, epochs]``.
 
@@ -110,6 +117,8 @@ def fit_horizontal_ensemble(
     if x_val is not None and y_val is not None and len(y_val) > 0:
         validation = (x_val, y_val)
     members: list[tf.keras.Model] = []
+    if progress is not None:
+        progress(0, epochs)
     for epoch in range(1, epochs + 1):
         model.fit(
             x_train,
@@ -121,6 +130,8 @@ def fit_horizontal_ensemble(
         )
         if epoch >= first_epoch:
             members.append(_clone(model))
+        if progress is not None:
+            progress(epoch, epochs)
     reference = members[reference_epoch - first_epoch]
     return members, reference
 

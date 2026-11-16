@@ -174,7 +174,7 @@ pytest
 python -m amr_lstm.demo
 ```
 
-The demo builds a synthetic cohort (about 40 columns, a few dozen patients), runs all three importance methods, the recursive cutoff, bootstrap voting and group lasso, fits the horizontal ensemble, and writes `outputs/demo_selection.png`. It finishes in a few minutes on a CPU. The numbers it prints belong to that synthetic draw.
+The demo builds a synthetic cohort (about 40 columns, a few dozen patients), runs all three importance methods, the recursive cutoff, bootstrap voting and group lasso, fits the horizontal ensemble, and writes `outputs/demo_selection.png` plus the feature ordering in `outputs/demo_ranking.txt`. Each stage prints a progress bar. It finishes in a few minutes on a CPU. The numbers it prints belong to that synthetic draw.
 
 `StudyConfig.paper()` holds the published budget: 100 units, 20 epochs, 50 / 500 / 50 importance repetitions, a curve over every feature, and 50-unit models for the selected subset and the ensemble. Walking that curve for one family means training the LSTM once per feature, on top of the importance stage. Six families at that budget are a cluster job, which is how the paper was computed.
 
