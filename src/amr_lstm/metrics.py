@@ -38,10 +38,10 @@ def classification_metrics(y_true: np.ndarray, y_prob: np.ndarray, threshold: fl
     accuracy = float((tp + tn) / total) if total else float("nan")
     sensitivity = float(tp / (tp + fn)) if (tp + fn) else float("nan")
     specificity = float(tn / (tn + fp)) if (tn + fp) else float("nan")
-    try:
-        auc = float(roc_auc_score(y_true, y_prob))
-    except ValueError:
+    if np.unique(y_true).size < 2:
         auc = float("nan")
+    else:
+        auc = float(roc_auc_score(y_true, y_prob))
     return {
         "loss": binary_cross_entropy(y_true, y_prob) if total else float("nan"),
         "auc": auc,
