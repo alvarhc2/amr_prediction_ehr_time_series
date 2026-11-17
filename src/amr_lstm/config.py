@@ -1,4 +1,4 @@
-"""Hyper-parameters of the published study, and a small demo budget."""
+"""Hyper-parameters of the published study."""
 
 from __future__ import annotations
 
@@ -9,9 +9,9 @@ from dataclasses import dataclass
 class StudyConfig:
     """Settings that reproduce the experimental protocol in the paper.
 
-    ``paper()`` is the published budget. It trains thousands of LSTM networks
-    and is not the default entry point. ``demo()`` keeps the same protocol and
-    shortens every repetition so the pipeline can be executed locally.
+    The field defaults are that published budget. ``paper()`` returns them
+    unchanged. A command-line run can replace the fields it exposes, such as
+    the unit counts, the epoch counts and the importance repetitions.
     """
 
     timesteps: int = 30
@@ -46,21 +46,19 @@ class StudyConfig:
     def paper(cls) -> StudyConfig:
         return cls()
 
-    @classmethod
-    def demo(cls) -> StudyConfig:
-        return cls(
-            units_full=8,
-            units_reduced=8,
-            epochs=2,
-            ensemble_epochs=4,
-            ensemble_first_epoch=2,
-            ensemble_reference_epoch=3,
-            gradient_repetitions=2,
-            random_subsets=6,
-            random_subset_size=6,
-            permutation_repetitions=1,
-            recursive_threshold=4,
-            bootstrap_repetitions=300,
-            group_lasso_iterations=120,
-            curve_max_features=8,
-        )
+
+def ensemble_bounds(epochs: int) -> tuple[int, int]:
+    """Checkpoint window for a horizontal ensemble trained for ``epochs`` epochs.
+
+    The published run trains for 30 epochs, keeps epochs 11 through 30, and
+    uses epoch 20 as the single network. For another length the same
+    fractions are kept: the last two thirds vote, and the single network is
+    the epoch two thirds of the way through training.
+    """
+
+    if epochs < 1:
+        raise ValueError("The ensemble needs at least one epoch.")
+    members = max(1, round(20 / 30 * epochs))
+    first = max(1, epochs - members + 1)
+    reference = max(first, min(epochs, round(20 / 30 * epochs)))
+    return first, reference

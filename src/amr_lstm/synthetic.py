@@ -44,8 +44,8 @@ _SIGNAL = (
 )
 
 
-def demo_feature_names(n_noise: int = 16) -> tuple[str, ...]:
-    """A short column list for the runnable demo, in modeling-matrix order."""
+def short_feature_names(n_noise: int = 16) -> tuple[str, ...]:
+    """A short column list, in modeling-matrix order, for a local run."""
 
     noise = [
         name

@@ -35,7 +35,7 @@ plot = ["matplotlib>=3.7"]
 dev = ["matplotlib>=3.7", "pytest>=7.4"]
 
 [project.scripts]
-amr-demo = "amr_lstm.demo:main"
+amr-lstm = "amr_lstm.run:main"
 
 [project.urls]
 Paper = "https://doi.org/10.1016/j.artmed.2023.102508"

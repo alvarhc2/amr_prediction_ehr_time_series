@@ -171,12 +171,22 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 pytest
-python -m amr_lstm.demo
+python -m amr_lstm
 ```
 
-The demo builds a synthetic cohort (about 40 columns, a few dozen patients), runs all three importance methods, the recursive cutoff, bootstrap voting and group lasso, fits the horizontal ensemble, and writes `outputs/demo_selection.png` plus the feature ordering in `outputs/demo_ranking.txt`. Each stage prints a progress bar. It finishes in a few minutes on a CPU. The numbers it prints belong to that synthetic draw.
+With no extra flags the command uses the published settings on a synthetic cohort: aminoglycosides, training through 2012, 100 units on the full feature set, 20 epochs, 50 / 500 / 50 importance repetitions, and 50 units after feature selection. Each stage prints a progress bar. The run writes `outputs/selection.png` and the feature ordering in `outputs/ranking.txt`. One family at that budget trains the LSTM once per importance repetition and once per feature on the selection curve, which is a long job. The printed scores belong to the synthetic cohort.
 
-`StudyConfig.paper()` holds the published budget: 100 units, 20 epochs, 50 / 500 / 50 importance repetitions, a curve over every feature, and 50-unit models for the selected subset and the ensemble. Walking that curve for one family means training the LSTM once per feature, on top of the importance stage. Six families at that budget are a cluster job, which is how the paper was computed.
+A shorter run keeps the same pipeline and changes the budget:
+
+```bash
+python -m amr_lstm --patients 36 --columns short --units 8 --units-selected 8 --epochs 2 --gradient-repetitions 2 --random-subsets 6 --subset-size 6 --permutation-repetitions 1 --ensemble-epochs 4
+python -m amr_lstm --data path/to/cohort.npz --family qui --year-split 2012
+python -m amr_lstm --help
+```
+
+`python -m amr_lstm --help` lists every flag and the default it uses.
+
+On Windows, keep the environment on a short path. TensorFlow installs headers whose full path otherwise exceeds 260 characters. For example: `py -3.12 -m venv C:\venvs\amr`.
 
 ```python
 from amr_lstm.config import StudyConfig
@@ -186,7 +196,7 @@ from amr_lstm.synthetic import generate_cohort
 
 cohort = generate_cohort(n_patients=80, seed=0)
 split = temporal_split(cohort, "qui", year_split=2012, seed=0)
-result = select_features(split, cohort.feature_names, StudyConfig.demo(), seed=0)
+result = select_features(split, cohort.feature_names, StudyConfig.paper(), seed=0)
 print(result.n_features, result.proposed.feature_names)
 ```
 
@@ -205,13 +215,12 @@ src/amr_lstm/
   pipeline.py      one family, end to end
   stats.py         paired bootstrap interval on AUC
   published.py     tables reported in the paper
-  demo.py          short runnable path
+  run.py           command line
 ```
 
 ## Data
 
-The cultures behind the paper come from the ICU of the University Hospital of Fuenlabrada, July 2004 to May 2019: 764 *P. 
-aeruginosa* cultures from 277 patients. The hospital extract is not part of this repository. Due to confidentiality, it cannot be uploaded.
+The cultures behind the paper come from the ICU of the University Hospital of Fuenlabrada, July 2004 to May 2019: 764 *P. aeruginosa* cultures from 277 patients. The hospital extract is not part of this repository. Due to confidentiality, it cannot be uploaded.
 
 `generate_cohort` builds a synthetic cohort with the same tensor shape, the same don't-care code, the same six targets and a resistance mechanism planted on prior resistance, a few administered antibiotics, sex, respiratory admission and mechanical ventilation, with resistance becoming more common in later years. It is a way to execute the code. It is not a statistical stand-in for the hospital, and a model trained on it says nothing about a real ICU.
 

@@ -43,8 +43,7 @@ def selection_curve(
 ) -> PerformanceCurve:
     """Train on the top-1, top-2, ... features and record validation rates.
 
-    The published curve walks all 398 features. ``max_features`` stops early,
-    which the demo uses.
+    The published curve walks all 398 features. ``max_features`` stops early.
     """
 
     lookup = {name: index for index, name in enumerate(feature_names)}
