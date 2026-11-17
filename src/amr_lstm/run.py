@@ -326,12 +326,27 @@ def _write_ranking(path: Path, result) -> None:
     gradient = dict(result.gradient)
     random_subset = dict(result.random_subset)
     permutation = dict(result.permutation)
-    lines = ["rank\tfeature\taverage\tgradient\trandom_subset\tpermutation"]
+    rows = [("rank", "feature", "average", "gradient", "random_subset", "permutation")]
     for rank, (name, average) in enumerate(result.ranked, start=1):
-        lines.append(
-            f"{rank}\t{clinical_name(name)}\t{average:.6f}\t"
-            f"{gradient[name]:.6f}\t{random_subset[name]:.6f}\t{permutation[name]:.6f}"
+        rows.append(
+            (
+                str(rank),
+                clinical_name(name),
+                f"{average:.6f}",
+                f"{gradient[name]:.6f}",
+                f"{random_subset[name]:.6f}",
+                f"{permutation[name]:.6f}",
+            )
         )
+    widths = [max(len(row[column]) for row in rows) for column in range(len(rows[0]))]
+    lines = []
+    for row in rows:
+        cells = [
+            row[0].rjust(widths[0]),
+            row[1].ljust(widths[1]),
+            *(cell.rjust(widths[index]) for index, cell in enumerate(row[2:], start=2)),
+        ]
+        lines.append("  ".join(cells))
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
